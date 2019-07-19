@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import net.thingks.domain.Question;
 import net.thingks.domain.QuestionRepository;
+import net.thingks.domain.Result;
 import net.thingks.domain.User;
 
 @Controller
@@ -52,8 +53,15 @@ public class QuestionController {
 
 	@GetMapping("/{id}/form")
 	public String updateForm(@PathVariable Long id, Model model, HttpSession session) {
+		Question question = questionRepository.findOne(id);
+		Result result = valid(session, question);
+		if(!result.isValid()) {
+			model.addAttribute("errorMessage", result.getErrorMessage());
+			return "/user/login";
+		
+		}
+		
 		try {
-			Question question = questionRepository.findOne(id);
 			hasPermission(session, question);
 			model.addAttribute("question", question);
 			return "/qna/updateForm";
@@ -63,7 +71,20 @@ public class QuestionController {
 		}
 
 	}
+	
+	private Result valid(HttpSession session, Question question) {
+		if (!HttpSessionUtils.isLoginUser(session)) {
+			return Result.fail("로그인이 필요합니다.");
+		}
 
+		User loginUser = HttpSessionUtils.getUserFromSession(session);
+		if (!question.isSameWriter(loginUser)) {
+			return Result.fail("자신이 쓴 글만 수정, 삭제가 가능합니다.");
+
+		}
+		return Result.ok();
+	}
+	
 	private boolean hasPermission(HttpSession session, Question question) {
 		if (!HttpSessionUtils.isLoginUser(session)) {
 			throw new IllegalStateException("로그인이 필요합니다.");
@@ -71,7 +92,7 @@ public class QuestionController {
 
 		User loginUser = HttpSessionUtils.getUserFromSession(session);
 		if (!question.isSameWriter(loginUser)) {
-			throw new IllegalStateException("자신이 쓴 글만 수정, 삭제가 가능합니");
+			throw new IllegalStateException("자신이 쓴 글만 수정, 삭제가 가능합니다.");
 
 		}
 
