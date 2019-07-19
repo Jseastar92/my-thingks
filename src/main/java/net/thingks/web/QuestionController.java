@@ -60,17 +60,11 @@ public class QuestionController {
 			return "/user/login";
 		
 		}
-		
-		try {
-			hasPermission(session, question);
-			model.addAttribute("question", question);
-			return "/qna/updateForm";
-		} catch (IllegalStateException e) {
-			model.addAttribute("errorMessage", e.getMessage());
-			return "/user/login";
+	
+		model.addAttribute("question", question);
+		return "/qna/updateForm";
 		}
 
-	}
 	
 	private Result valid(HttpSession session, Question question) {
 		if (!HttpSessionUtils.isLoginUser(session)) {
@@ -101,29 +95,33 @@ public class QuestionController {
 
 	@PutMapping("/{id}")
 	public String update(@PathVariable Long id, String title, String contents, Model model, HttpSession session) {
-		try {
-			Question question = questionRepository.findOne(id);
-			hasPermission(session, question);
-			question.update(title, contents);
-			questionRepository.save(question);
-			return String.format("redirect:/questions/%d", id);
-		} catch (IllegalStateException e) {
-			model.addAttribute("errorMessage", e.getMessage());
+		Question question = questionRepository.findOne(id);
+		Result result = valid(session, question);
+		if(!result.isValid()) {
+			model.addAttribute("errorMessage", result.getErrorMessage());
 			return "/user/login";
+		
 		}
+		 
+		question.update(title, contents);
+		questionRepository.save(question);
+		return String.format("redirect:/questions/%d", id);
+		
 	}
 
 	@DeleteMapping("/{id}")
 	public String delete(@PathVariable Long id, Model model, HttpSession session) {
-		try {
-			Question question = questionRepository.findOne(id);
-			hasPermission(session, question);
+		
+		Question question = questionRepository.findOne(id);
+		Result result = valid(session, question);
+		if(!result.isValid()) {
+			model.addAttribute("errorMessage", result.getErrorMessage());
 
-			questionRepository.delete(id);
-			return "redirect:/";
-		} catch (IllegalStateException e) {
-			model.addAttribute("errorMessage", e.getMessage());
 			return "/user/login";
 		}
+
+		questionRepository.delete(id);
+		return "redirect:/";
+		
 	}
 }
