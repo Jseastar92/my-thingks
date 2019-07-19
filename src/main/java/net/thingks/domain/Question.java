@@ -2,13 +2,17 @@ package net.thingks.domain;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 
 @Entity
 public class Question {
@@ -21,10 +25,15 @@ public class Question {
 	private User writer;
 	
 	private String title;
+	
+	@Lob
 	private String contents;
 	
 	private LocalDateTime createDate; // java 8에서 생김
 	
+	@OneToMany(mappedBy="question")
+	@OrderBy("id ASC")
+	private List<Answer> answers;
 
 	public Question() {} // JPA는 기본생성자가 있어야
 	
@@ -41,7 +50,6 @@ public class Question {
 			return "";
 		}
 		return createDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss"));
-		
 	}
 
 	public void update(String title, String contents) {
